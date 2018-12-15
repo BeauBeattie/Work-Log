@@ -100,6 +100,7 @@ class WorkLog(object):
                     'Date': task.task_date,
                     'Duration': task.task_duration,
                     'Notes': task.task_notes}
+        # Checking for duplicates
         new_task_ord = OrderedDict(new_task)
         new_task_ord['Duration'] = str(new_task_ord['Duration'])
         existing_tasks = self.fetch_tasks()
@@ -122,7 +123,8 @@ class WorkLog(object):
 
     def fetch_tasks(self):
         """ Finds all the entries in work log and returns for searching"""
-        with open(FILE_NAME, 'r') as csvfile:
+        with open(FILE_NAME, 'a+') as csvfile:
+            csvfile.seek(0)
             fieldnames = ['Task name', 'Date', 'Duration', 'Notes']
             reader = csv.DictReader(csvfile, fieldnames=fieldnames)
             tasks = list(reader)
@@ -130,7 +132,6 @@ class WorkLog(object):
 
     def search_menu(self):
         """ Menu for user to search work log"""
-
         tasks = self.fetch_tasks()
         clear_screen()
         if len(tasks) == 0:
@@ -207,6 +208,8 @@ class WorkLog(object):
             print("Entry {} of {}.".format(index + 1, len(tasks)))
             print(options)
             navigation = input(">")
+
+            # Controls index count and continues in loop
 
             if navigation.lower() in "npbed" and navigation.upper() in \
                     options:
@@ -423,14 +426,9 @@ class WorkLog(object):
         tasks = self.fetch_tasks()
         all_tasks = []
         print()
-        new_task = old_task
         for task in tasks:
             if task != old_task:
                 all_tasks.append(task)
-
-        with open(FILE_NAME, 'w') as outfile:
-            fp = csv.DictWriter(outfile, all_tasks[0].keys())
-            fp.writerows(all_tasks)
 
         while True:
             while True:
@@ -442,7 +440,7 @@ class WorkLog(object):
                 else:
                     old_task['Task name'] = task_name
                     break
-
+            # Date
             clear_screen()
             while True:
                 print("Old date: {}\n".format(old_task['Date']))
@@ -457,7 +455,7 @@ class WorkLog(object):
                 else:
                     old_task['Date'] = task_date.strftime(DATE_FORMAT)
                     break
-
+            # Duration
             clear_screen()
             print("Old duration of task: {}\n".format(old_task['Duration']))
             while True:
@@ -471,7 +469,7 @@ class WorkLog(object):
                 else:
                     old_task['Duration'] = task_duration
                     break
-
+            # Notes
             clear_screen()
             print("Old notes: {}\n".format(old_task['Notes']))
             task_notes = input("Please enter task notes. (Optional):  ")
@@ -481,6 +479,7 @@ class WorkLog(object):
                 old_task['Notes'] = task_notes
 
             old_task['Duration'] = str(old_task['Duration'])
+            # Checks for duplicate
             for task in tasks:
                 if task == old_task:
                     clear_screen()
@@ -503,13 +502,19 @@ class WorkLog(object):
         clear_screen()
         tasks = self.fetch_tasks()
         remaining_tasks = []
+        # Checks for duplicates
         for task in tasks:
             if task != task_to_delete:
                 remaining_tasks.append(task)
 
+        # Deletes file, writes nothing to file if number of entries is zero
         with open(FILE_NAME, 'w') as outfile:
-            fp = csv.DictWriter(outfile, remaining_tasks[0].keys())
-            fp.writerows(remaining_tasks)
+            if len(remaining_tasks) > 0:
+                fp = csv.DictWriter(outfile, remaining_tasks[0].keys())
+                fp.writerows(remaining_tasks)
+            else:
+                fp = csv.DictWriter(outfile, "")
+                fp.writerows("")
 
         clear_screen()
         input("Task deleted. Press any button to continue.")
